@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+
+<head>
+  <script async defer src="https://apis.google.com/js/api.js" onload="handleClientLoad()"></script>
+  <style>
+    #userinfo {
+      display: flex;
+      flex-direction: column;
+      padding: 10px;
+      border: 1px solid grey;
+      width: 200px;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #userinfo img {
+        width: fit-content;
+    }
+  </style>
+  <title></title>
+</head>
+
+<body>
+  <h1>Welcome to google app auth with contact permission</h1>
+  <div class="g-signin2" data-onsuccess="onSignIn" onclick="handleSignIn()">Google Signin</div>
+  <button onclick="handleSignout()">Signout</button>
+  <div id='userinfo'></div>
+
+  <script>
+    // https://www.googleapis.com/discovery/v1/apis
+    var googleOAuthclientId = '<clientid>';
+    var contactsScope = 'https://www.googleapis.com/auth/contacts';
+
+    // called on click api
+    var GoogleAuth; // Google Auth object.
+    var GoogleUser;
+
+    // read token from auth response
+    function getAccessToken() {
+      var accessToken = GoogleUser && GoogleUser.getAuthResponse().access_token;
+      console.log(accessToken);
+    }
+
+    // revoke permissions
+    function revokeAccess() {
+      GoogleAuth.disconnect();
+    }
+
+    // on signin click
+    function handleSignIn() {
+      if (GoogleAuth.isSignedIn.get()) {
+        // User is authorized and has clicked 'Sign out' button.
+  
+        var basicProfile = GoogleUser.getBasicProfile();
+        var userData = {
+            email: basicProfile.getEmail(),
+            familyName: basicProfile.getFamilyName(),
+            getGivenName: basicProfile.getGivenName(),
+            id: basicProfile.getId(),
+            img: basicProfile.getImageUrl(),
+            name: basicProfile.getName()
+          };
+        
+          showUserData('userinfo', userData);
+
+        getAccessToken();
+        console.log('already sigin');
+
+
+      } else {
+        // User is not signed in. Start Google auth flow.
+        GoogleAuth.signIn().then(function (response) {
+          //If Google OAuth 2 works fine
+          console.log('response');
+          var basicProfile = response.getBasicProfile();
+          console.log({
+            email: basicProfile.getEmail(),
+            familyName: basicProfile.getFamilyName(),
+            getGivenName: basicProfile.getGivenName(),
+            id: basicProfile.getId(),
+            img: basicProfile.getImageUrl(),
+            name: basicProfile.getName()
+          });
+          console.log(response.getGrantedScopes());
+        }, function (error) {
+          //If Google OAuth 2 occured error
+          console.log('error');
+          console.log(error);
+          if (error.error === 'popup_closed_by_user') {
+            alert('Oh Dude, Why you close authentication user window...!');
+          };
+        });
+    }
+  }
+
+  function showUserData (id, data = {}) {
+    
+    var parent = document.getElementById(id);
+    parent.innerHTML = '';
+
+    if (!parent) return;
+
+    var name = document.createElement('span');
+    name.innerText = 'Name: ' + data.name;
+    parent.appendChild(name);
+
+    var email = document.createElement('span');
+    email.innerText = 'Email: ' + data.email;
+    parent.appendChild(email);
+
+    var img = document.createElement('img');
+    img.src= data.img;
+    parent.appendChild(img);
+
+  }
+
+      function handleSignout() {
+        revokeAccess();
+        GoogleAuth.signOut();
+      }
+
+      function signinCallBack() {
+        console.log(arguments);
+      }
+
+
+      function initClient() {
+        gapi.client.init({
+          'apiKey': '<api>',
+          'clientId': googleOAuthclientId,
+          'scope': contactsScope,
+          //'discoveryDocs': ['https://people.googleapis.com/$discovery/rest?version=v1']
+        }).then(function () {
+          GoogleAuth = gapi.auth2.getAuthInstance();
+
+
+
+          GoogleUser = GoogleAuth.currentUser.get();
+          console.log
+          console.log('init client');
+          getAccessToken();
+          // Listen for sign-in state changes.
+          var basicProfile = GoogleUser.getBasicProfile();
+        var userData = {
+            email: basicProfile.getEmail(),
+            familyName: basicProfile.getFamilyName(),
+            getGivenName: basicProfile.getGivenName(),
+            id: basicProfile.getId(),
+            img: basicProfile.getImageUrl(),
+            name: basicProfile.getName()
+          };
+        
+          showUserData('userinfo', userData);
+          GoogleAuth.isSignedIn.listen(updateSigninStatus);
+        });
+      }
+
+      /**
+       * It will called when google api is loaded
+       */
+      function handleClientLoad() {
+        // Load the API's client and auth2 modules.
+        // Call the initClient function after the modules load.
+        gapi.load('client:auth2', initClient);
+      }
+
+
+      function handleAuthClick() {
+        if (GoogleAuth.isSignedIn.get()) {
+          // User is authorized and has clicked 'Sign out' button.
+          GoogleAuth.signOut();
+        } else {
+          // User is not signed in. Start Google auth flow.
+          GoogleAuth.signIn();
+        }
+      }
+
+      function revokeAccess() {
+        GoogleAuth.disconnect();
+      }
+
+      function setSigninStatus(isSignedIn) {
+        var isAuthorized = GoogleUser.hasGrantedScopes(contactsScope);
+        console.log(isAuthorized);
+      }
+
+      function updateSigninStatus(isSignedIn) {
+        if (!isSignedIn) return;
+
+
+        //GoogleUser && GoogleUser.grant({ 'scope': contactsScope });
+        getAccessToken();
+      }
+
+  </script>
+</body>
+
+</html>
